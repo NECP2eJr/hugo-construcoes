@@ -121,22 +121,19 @@ const guideLine = new GuideLine(container);
 
 // ─── Mobile ────────────────────────────────────────────────────
 let mobileMode = isTouchDevice();
-const mobileNameOverlay = new MobileNameOverlay(container);
 let mobileZoom = null;
+const mobileNameOverlay = new MobileNameOverlay(container, () => mobileZoom?.zoomOut());
 
 if (mobileMode) {
   setupMobileCamera(camera, controls);
-  mobileZoom = new MobileZoom(camera, building.apartments, mobileNameOverlay);
 }
+mobileZoom = new MobileZoom(camera, building.apartments, mobileNameOverlay, controls);
 
 watchTouchMode((isTouch) => {
   mobileMode = isTouch;
-  if (isTouch) {
+  if (isTouch && !mobileZoom.zoomed) {
     setupMobileCamera(camera, controls);
-    if (!mobileZoom) {
-      mobileZoom = new MobileZoom(camera, building.apartments, mobileNameOverlay);
-    }
-  } else {
+  } else if (!isTouch && !mobileZoom.zoomed) {
     controls.enabled = true;
   }
 });
@@ -204,10 +201,23 @@ renderer.domElement.addEventListener('mousemove', (e) => {
 });
 
 renderer.domElement.addEventListener('click', (e) => {
+  if (mobileMode) return; // O touchstart cuida dos toques para evitar clique duplicado.
   const hit = doRaycast(e.clientX, e.clientY);
-  if (!hit) return;
+  if (!hit) {
+    if (mobileZoom?.zoomed) mobileZoom.zoomOut();
+    return;
+  }
 
   const { type } = hit.object.userData;
+  if (type !== 'apartment' && mobileZoom.zoomed) mobileZoom.zoomOut();
+  if (type === 'apartment') {
+    const key = hit.object.userData.key;
+    if (mobileZoom.zoomedKey === key) mobileZoom.zoomOut();
+    else mobileZoom.zoomTo(key);
+    guideLine.hide();
+    hoveredApt = null;
+    return;
+  }
 
   if (type === 'post') {
     const post = hit.object.userData.post;
@@ -238,18 +248,6 @@ renderer.domElement.addEventListener('click', (e) => {
     }
   }
 
-  if (mobileMode && type === 'apartment') {
-    const key = hit.object.userData.key;
-    const apt = building.apartments.get(key);
-    if (apt && apt.lit && mobileZoom) {
-      if (mobileZoom.zoomedKey === key) {
-        mobileZoom.zoomOut();
-      } else {
-        mobileZoom.zoomTo(key);
-      }
-    }
-    firefly.touchPulse(e.clientX, e.clientY);
-  }
 });
 
 // Touch events for mobile
@@ -262,13 +260,11 @@ renderer.domElement.addEventListener('touchstart', (e) => {
   const hit = doRaycast(touch.clientX, touch.clientY);
   if (hit) {
     const { type } = hit.object.userData;
-
+    if (type !== 'apartment' && mobileZoom.zoomed) mobileZoom.zoomOut();
     if (type === 'apartment') {
       const key = hit.object.userData.key;
-      const apt = building.apartments.get(key);
-      if (apt && apt.lit && mobileZoom) {
-        mobileZoom.zoomTo(key);
-      }
+      if (mobileZoom.zoomedKey === key) mobileZoom.zoomOut();
+      else mobileZoom.zoomTo(key);
     } else if (type === 'post') {
       const post = hit.object.userData.post;
       if (post) post.on = !post.on;
@@ -300,9 +296,7 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 
-  if (mobileMode) {
-    setupMobileCamera(camera, controls);
-  }
+  if (mobileMode && !mobileZoom?.zoomed) setupMobileCamera(camera, controls);
 });
 
 // ─── Loop de animação ──────────────────────────────────────────
@@ -322,7 +316,7 @@ function animate() {
   if (dt > 0.5) return;
 
   // ── Controles ──
-  if (!mobileMode) {
+  if (!mobileMode && !mobileZoom?.zoomed) {
     controls.updateCamera(dt);
     renderer.domElement.style.opacity = controls.wrapFade ?? 1;
   }

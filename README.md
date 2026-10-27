@@ -12,7 +12,32 @@ Um prédio 3D colaborativo em wireframe, onde cada pessoa acende uma luz ao envi
 
 ## 🚀 Como participar
 
-Leia o [**CONTRIBUTING.md**](CONTRIBUTING.md) — lá tem o passo a passo completo para quem nunca usou Git.
+### Coloque seu apartamento no prédio
+
+Cada morador entra com **uma pasta e um arquivo JSON**. Você não precisa editar o código do site.
+
+1. **Escolha um apartamento vazio.** Abra o site e clique em um apartamento sem luz para ver o número e as instruções. Cada apartamento só pode ter um morador.
+2. **Crie uma branch** para sua contribuição, por exemplo `morador/ana-souza`.
+3. **Crie uma pasta com seu nome em formato slug:** tudo minúsculo, sem acentos ou espaços e com hífen entre as palavras. Exemplo: `ana-souza`.
+4. **Crie dentro dela um JSON com o mesmo nome da pasta:** `apartamentos/ana-souza/ana-souza.json`.
+5. **Preencha os três campos** usando este exemplo:
+
+   ```json
+   {
+     "nome": "Ana Souza",
+     "apartamento": "304",
+     "corLuz": "#800080"
+   }
+   ```
+
+   `nome` é como você quer aparecer no prédio; troque `304` pelo número vazio que escolheu; `corLuz` é uma cor hexadecimal como `#800080` (roxo) ou `#ff6600` (laranja). Cada número só pode aparecer uma vez.
+
+6. **Valide antes de enviar:** rode `npm run validate` na pasta do projeto. Se aparecer um erro, corrija o JSON ou escolha outro apartamento e rode o comando de novo.
+7. **Envie sua branch e abra um Pull Request** para a branch `main`. Depois que a validação e a revisão passarem, o apartamento entra no site.
+
+Use uma cópia de `apartamentos/_modelo/_modelo.json` como referência; não coloque sua pasta dentro de `_modelo`. O modelo é ignorado pelo site.
+
+Para ver os comandos de Git explicados passo a passo, incluindo fork, commit e Pull Request, leia [**CONTRIBUTING.md**](CONTRIBUTING.md).
 
 ## 💻 Rodar localmente (opcional)
 
@@ -41,7 +66,7 @@ npm run validate
 | ---------- | ----------------------- |
 | Node.js    | v24.20.0 (ver `.nvmrc`) |
 | npm        | 11.x                    |
-| Vite       | ~6.x                    |
+| Vite       | 8.3.5                   |
 | Three.js   | ~0.175.x                |
 
 > Validado em outubro/2026.
